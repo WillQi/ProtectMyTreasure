@@ -10,8 +10,6 @@ class ModRuleManager {
         this.storage = storage;
         this.ruleStorage = storage.get(STORAGE_KEY, {});
         this.modrules = new Enmap();
-
-        this.registerRule("message.spam", ["ban"]);
     }
 
     /**
