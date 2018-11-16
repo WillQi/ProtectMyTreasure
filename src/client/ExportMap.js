@@ -13,6 +13,10 @@ class ExportMap {
         return this._map.set(key, value);
     }
 
+    /**
+     * Get a value with the key.
+     * @param {string} key Key to retrieve.
+     */
     get (key) {
         return this._map.get(key);
     }

@@ -16,6 +16,11 @@ class StorageEnmap {
         
     }
 
+    /**
+     * Get a value from storage.
+     * @param {string} prop Property to retrieve.
+     * @param {any} fallback Fallback if property does not exist.
+     */
     get (prop, fallback) {
         if (!this.key) throw new Error("Unable to get data without a key set.");
         const value = this._enmap.get(prop);
@@ -25,6 +30,11 @@ class StorageEnmap {
         return JSON.parse(decrypted);
     }
 
+    /**
+     * Set a property in storage.
+     * @param {string} key Property to set.
+     * @param {any} value Value to set.
+     */
     set (key, value) {
         if (!this.key) throw new Error("Unable to set data without a key set.");
         const encryptedData = this.encrypt(JSON.stringify(value));
@@ -32,10 +42,18 @@ class StorageEnmap {
         return encryptedData;
     }
 
+    /**
+     * Delete something in storage.
+     * @param {string} key Property to delete.
+     */
     delete (key) {
         this._enmap.delete(key);
     }
 
+    /**
+     * Encrypt a value.
+     * @param {any} value Value to encrypt.
+     */
     encrypt (value) {
         if (!this.key) throw new Error("Unable to decrypt without a key set.");
         const IV = Buffer.from(
@@ -59,6 +77,11 @@ class StorageEnmap {
         };
     }
 
+    /**
+     * Decrypt something.
+     * @param {string} encrypted Encrypted text.
+     * @param {Buffer} IV IV the text is encrypted with.
+     */
     decrypt (encrypted, IV) {
         if (!this.key) throw new Error("Unable to decrypt without a key set.");
         const cipher = createDecipheriv(
@@ -74,6 +97,7 @@ class StorageEnmap {
 
     /**
      * Called by ProtectMyTreausre, sets the key to use for the bot.
+     * @param {string} key Key to use for encryption.
      */
     setKey (key) {
         this.key = key;

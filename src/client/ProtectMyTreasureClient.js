@@ -143,9 +143,8 @@ class ProtectMyTreasureClient {
      * Login to the client.
      * @param {string} token Token to login with.
      */
-    async login (token) {
-        await this.setupStorage(token);
-        return await this.client.login(token);
+    login (token) {
+        return this.client.login(token);
     }
 };
 
