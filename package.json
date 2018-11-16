@@ -1,0 +1,18 @@
+{
+  "name": "protectmytreasure",
+  "version": "1.0.0",
+  "description": "Highly customizable moderation bot.",
+  "main": "app.js",
+  "dependencies": {
+    "better-sqlite-pool": "^0.1.2",
+    "discord.js": "^11.4.2",
+    "enmap": "^4.3.3",
+    "enmap-sqlite": "^2.0.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "William Qi",
+  "license": "MIT"
+}

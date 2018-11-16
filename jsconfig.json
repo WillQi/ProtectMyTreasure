@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "es2017",
+      "strict": true,
+      "resolveJsonModule": true
+    },
+    "typeAcquisition": {
+      "enable": true
+    },
+    "exclude": ["node_modules"],
+    "include": [
+      "src/**/*.d.ts",
+      "src/**/*.js"
+    ]
+  }
+  

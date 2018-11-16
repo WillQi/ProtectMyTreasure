@@ -1,0 +1,10 @@
+{
+    "TOKEN": "YOUR BOT TOKEN",
+    "BOT_OWNERS": [
+        "YOUR USER ID"
+    ],
+    "COOLDOWN": 2000,
+    "DEFAULT_SETTINGS": {
+        "PREFIX": "p!"
+    }
+}
