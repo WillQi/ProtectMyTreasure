@@ -18,11 +18,11 @@ class ModRuleManager {
      * @param {string} rule Rule to check property(s) for.
      * @param {string} property Property we want to find out for this rule.
      */
-    isRuleActive (guildResolvable, rule, property) {
+    hasRuleActive (guildResolvable, rule, property) {
         if (!this.doesRuleExist(rule, property)) throw new Error("Rule specified does not exist!");
         const guildID = guildResolvable.id || guildResolvable;
         const guildRules = this.ruleStorage[guildID] || {};
-        if (!guildResolvable[rule.toLocaleLowerCase()]) return false;
+        if (!guildRules[rule.toLocaleLowerCase()]) return false;
         return !!guildRules[rule.toLocaleLowerCase()][property.toLocaleLowerCase()];
     }
 
@@ -41,7 +41,7 @@ class ModRuleManager {
             if (!currentDir) return false;
             ruleParts.splice(0, 1);
         }
-        return currentDir[property.toLocaleLowerCase()] !== undefined;
+        return typeof currentDir[property.toLocaleLowerCase()] === "boolean";
     }
 
     /**
@@ -86,11 +86,13 @@ class ModRuleManager {
 
     /**
      * Retrieve all the choices the user can make at this point with their current query.
-     * @param {string} query Our current choices.
+     * @param {string} [query=null] Our current choices.
      */
     getRuleOptions (query) {
+        if (!query) return this.modrules.keyArray();
         const queryParts = query.toLocaleLowerCase().split(".");
-        let currentDir = this.modrules.get(ruleParts[0]);
+        if (!queryParts[0]) return this.modrules.keyArray();
+        let currentDir = this.modrules.get(queryParts[0]);
         if (!currentDir) return [];
         queryParts.splice(0, 1);
         while (queryParts.length > 0) {
