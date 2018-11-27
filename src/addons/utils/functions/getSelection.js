@@ -25,7 +25,7 @@ const reactUntilGone = async (message, reactionsLeft) => {
     await reactUntilGone(message, reactionsLeft.slice(1));
 };
 
-const getSelection = async (user, channel, embed, options) => {
+const getSelection = async ({user, channel, embed}, options) => {
     const oLength = options.length > emotes.length ? emotes.length : options.length; //We only allow x options per page.
     const oDesc = embed.description || "";
     embed.setDescription(`

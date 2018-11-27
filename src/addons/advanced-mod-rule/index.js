@@ -6,6 +6,18 @@ module.exports = PMTbot => {
         description: "Specifically specify what the bot should moderate, this is a more advanced version of `modrule`.",
         alias: ["amod-rule", "amr", "a-modrule", "amodrule"]
     }, async (message, [ruleUnparsed, valueUnparsed]) => {
+
+        if (!message.member.permissions.has("ADMINISTRATOR")) {
+            //Only people with admin can use this.
+            try {
+                await message.channel.send(
+                    new RichEmbed()
+                    .setDescription("Only users with the administrator permission can use this command!")
+                    .setColor(0xff0000)
+                );
+            } catch (error) {}
+            return;
+        }
         
         const {PREFIX} = PMTbot.storage.get("config", {})[message.guild.id];
 

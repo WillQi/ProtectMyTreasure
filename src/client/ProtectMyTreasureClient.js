@@ -1,4 +1,4 @@
-const {RichEmbed, Client} = require("discord.js");
+const {Client, RichEmbed} = require("discord.js");
 const Enmap = require("enmap");
 
 const StorageEnmap = require("./StorageEnmap");
@@ -9,7 +9,9 @@ class ProtectMyTreasureClient {
     
     constructor () {
 
-        this.client = new Client(); 
+        this.client = new Client({
+            disableEveryone: true
+        }); 
 
         this._callbacks = new Enmap();
         this._cooldowns = new Enmap();
@@ -20,64 +22,20 @@ class ProtectMyTreasureClient {
 
         //Command handler.
         this.on("message", async message => {
-            if (message.channel.type !== "text" || message.author.bot || !message.guild.available || !this.client.user) return;
-            const guildConfigurations = this.storage.get("config", {});
-            if (!guildConfigurations[message.guild.id]) {
-                //Set configurations.
-                guildConfigurations[message.guild.id] = DEFAULT_SETTINGS;
-                this.storage.set("config", guildConfigurations);
-            }
-
-            const permissions = message.channel.permissionsFor(this.client.user);
-            if (!permissions || !permissions.has("SEND_MESSAGES") || !permissions.has("EMBED_LINKS")) return; //We don't have the required permissions to send messages.
-
-            const {PREFIX} = guildConfigurations[message.guild.id];
-
-            const contentLowercase = message.content.toLocaleLowerCase();
-            if (!contentLowercase.startsWith(PREFIX.toLocaleLowerCase())) return; //Not our prefix.
-
-            const [command, ...args] = message.content.slice(PREFIX.length).split(/ +/g);
-            let commands = this.commands.get(command.toLocaleLowerCase()) || [];
-
-            //What the heck am I doing here.
-            if (commands.length === 0) {
-                const entries = Array.from(this.commands.values());
-                for (const c of entries) {
-                    const results = c.filter(cmd => cmd.options.alias && cmd.options.alias.includes(command.toLocaleLowerCase()));
-                    if (results.length > 0) commands = commands.concat(results);
-                }
-            }
-
-            message.channel = message.channel;
+            if (!this._isValidMessage(message)) return;
+            const {PREFIX} = this.storage.get("config", {})[message.guild.id];
+            const [unparsedCommand, ...args] = message.content.slice(PREFIX.length).split(/ +/);
+            const commands = this._getMatchingCommands(unparsedCommand.toLocaleLowerCase());
             for (const command of commands) {
-                if (command.options.botowner && !BOT_OWNERS.includes(message.author.id)) continue; //This command requires you to be the botowner.
-                const cooldown = this._cooldowns.get(message.author.id) || 0;
-                if (cooldown > Date.now()) return; //They can't execute any command yet. They're on cooldown.
-                this._cooldowns.set(message.author.id, Date.now() + COOLDOWN);
-                try {
-                    const response = command.callback(message, args);
-                    if (response && response.then) {
-                        //TODO: Check if error is a message failing to send.
-                        response.catch(error => {
-                            console.error("Error while executing %s", message.content);
-                            console.error(error);
-                            message.channel.send(
-                                new RichEmbed()
-                                .setDescription("An error occured while executing that command! It has been reported to the developer.")
-                                .setColor(0xff0000)
-                            ).catch(() => null);
-                        });
+                if ((command.options.botowner && BOT_OWNERS.includes(message.author.id)) || !command.options.botowner) {
+                    this._cooldowns.set(message.author.id, Date.now() + COOLDOWN);
+                    try {
+                        const response = command.callback(message, args);
+                        if (response instanceof Promise) response.catch(error => this._handleCommandHandlerError(message, error));
+                    } catch (error) {
+                        this._handleCommandHandlerError(message, error);
                     }
-                    return;
-                } catch (error) {
-                    //TODO: Check if error is a message failing to send.
-                    console.error("Error while executing %s", message.content);
-                    console.error(error);
-                    message.channel.send(
-                        new RichEmbed()
-                        .setDescription("An error occured while executing that command! It has been reported to the developer.")
-                        .setColor(0xff0000)
-                    ).catch(() => null);
+                    break; //Don't run any more commands.
                 }
             }
 
@@ -93,7 +51,6 @@ class ProtectMyTreasureClient {
         this._callbacks.ensure(event, []);
         if (this._callbacks.get(event).length === 0) {
             //Create an event listener for this event.
-            
             this.client.on(event, (...args) => {
                 const cbs = this._callbacks.get(event);
                 for (const callback of cbs) callback.apply(null, args);
@@ -146,6 +103,76 @@ class ProtectMyTreasureClient {
     login (token) {
         return this.client.login(token);
     }
+
+
+    /**
+     * Error handler for command handler.
+     * @param {import("discord.js").Message} message
+     * @param {Error} error
+     * @private
+     */
+    _handleCommandHandlerError (message, error) {
+        console.error("Error while executing %s", message.content);
+        console.error(error);
+        message.channel.send(
+            new RichEmbed()
+            .setDescription("An error occured while executing that command! It has been reported to the developer.")
+            .setColor(0xff0000)
+        ).catch(() => null);
+    }
+
+    /**
+     * Adds a guild to the configuration storage if they are not in it already.
+     * @param {import("discord.js").Guild} guild
+     * @private
+     */
+    _addToConfig (guild) {
+        const guildConfigurations = this.storage.get("config", {});
+        if (!guildConfigurations[guild.id]) {
+            //Set configurations.
+            guildConfigurations[guild.id] = DEFAULT_SETTINGS;
+            this.storage.set("config", guildConfigurations);
+        }
+    }
+
+    /**
+     * Validates whether or not a message should run any commands.
+     * @param {import("discord.js").Message} message
+     * @private
+     */
+    _isValidMessage (message) {
+        if (message.channel.type !== "text" || message.author.bot || !message.guild.available) return false; //Message is not a TextChannel, user is a bot, or the guild isn't available.
+        const permissions = message.channel.permissionsFor(this.client.user);
+        if (!permissions || !permissions.has(["SEND_MESSAGES", "EMBED_LINKS"])) return false; //Bot cannot send messages to this channel.
+
+        //Are they on cooldown?
+        const cooldown = this._cooldowns.get(message.author.id) || 0;
+        if (cooldown > Date.now()) return false; //They are still on cooldown.
+
+        this._addToConfig(message.guild); //If they aren't in the configuration already, add them.
+        const {PREFIX} = this.storage.get("config", {})[message.guild.id];
+        return message.content.toLocaleLowerCase().startsWith(PREFIX.toLocaleLowerCase());
+    }
+
+    /**
+     * Return any command objects matching the command provided.
+     * @param {string} command
+     * @private
+     */
+    _getMatchingCommands (command) {
+        const commands = (this.commands.get(command) || []);
+        //Get alias commands
+        const entries = Array.from(this.commands.values());
+        for (const similarCommandGroups of entries) { //similarCommandGroups is a array of commands with the same name. (e.g. adding 2 commands with the name "test")
+            for (const c of similarCommandGroups) {
+                if (c.options.alias && c.options.alias.includes(command)) { //Command is included in this command's alias.
+                    commands.push(c);
+                }
+            }            
+        }
+        return commands;
+    }
+
 };
 
 module.exports = ProtectMyTreasureClient;

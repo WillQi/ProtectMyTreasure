@@ -8,18 +8,35 @@ module.exports = PMTbot => {
         "mute"
     ];
 
+    const noSevereMessageProperties = [
+        "warn",
+        "delete",
+        "mute"
+    ];
+
+    const raidProperties = [
+        "warn",
+        "ban",
+        "kick",
+        "slowmode"
+    ];
+
     PMTbot.on("ready", () => {
         //Bot is logged in, by now the modrule manager HAS to be exported.
 
         const modRuleManager = PMTbot.exports.get("modrule.manager");
-        modRuleManager.registerRule("message.raid", messageProperties);
-        modRuleManager.registerRule("message.spam", messageProperties);
-        modRuleManager.registerRule("message.capitals", messageProperties);
-        modRuleManager.registerRule("message.emojiSpam", messageProperties);
+        //modRuleManager.registerRule("message.raid", raidProperties); //TODO
+        modRuleManager.registerRule("message.spam.mentions", messageProperties);
+        modRuleManager.registerRule("message.spam.text", messageProperties);
+        modRuleManager.registerRule("message.capitals", noSevereMessageProperties);
         modRuleManager.registerRule("message.invite", messageProperties);
-        modRuleManager.registerRule("message.swears", messageProperties);
+        modRuleManager.registerRule("message.badWords", messageProperties);
 
     });
 
     require("./rules/capitals")(PMTbot);
+    require("./rules/spamMentions")(PMTbot);
+    require("./rules/spamText")(PMTbot);
+    require('./rules/invite')(PMTbot);
+    require("./rules/badWords")(PMTbot);
 };

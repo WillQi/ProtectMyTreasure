@@ -3,7 +3,7 @@ const {join} = require("path");
 
 const ProtectMyTreasureClient = require("./src/client/ProtectMyTreasureClient");
 
-const {TOKEN} = require("./config.json");
+const TOKEN = process.env.TOKEN;
 
 const PMTclient = new ProtectMyTreasureClient();
 

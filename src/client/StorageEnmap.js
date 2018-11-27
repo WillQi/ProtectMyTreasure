@@ -1,4 +1,6 @@
 const Enmap = require("enmap");
+const fs = require("fs");
+const path = require("path");
 const {createCipheriv, createHash, createDecipheriv} = require("crypto");
 
 /**
@@ -8,6 +10,7 @@ class StorageEnmap {
 
     constructor () {
 
+        if (!fs.existsSync(path.join(__dirname, "..", "..", "..", "database"))) fs.mkdirSync(path.join(__dirname, "..", "..", "..", "database"));
         this._enmap = new Enmap({ name: "database", dataDir: "./database" });
 
         this.defer = this._enmap.defer;
