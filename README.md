@@ -1,3 +1,3 @@
 # ProtectMyTreasure
 
-A Discord Moderation bot I'm working on.
+A Discord Moderation bot I worked on.
